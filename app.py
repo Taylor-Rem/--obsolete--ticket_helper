@@ -6,6 +6,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchWindowException
 from webdriver_manager.chrome import ChromeDriverManager
 
 from config import username, password, resident_map, management_portal
@@ -26,14 +27,15 @@ ticket_resident_xpath = "/html/body/div[1]/div[19]/div/main/div/div/div/div/div[
 property_xpath = "/html/body/table[2]/tbody/tr[2]/td/table/tbody/tr[1]/td[4]/a"
 ledger_xpath = "/html/body/table[2]/tbody/tr[4]/td/table/tbody/tr/td/table[3]/tbody/tr[2]/td/table/tbody/tr[last()]/td[4]/a[4]"
 resident_xpath = "/html/body/table[2]/tbody/tr[4]/td/table/tbody/tr/td/table[3]/tbody/tr[2]/td/table/tbody/tr[2]/td[2]/a"
-former_res_xpath = "/html/body/table[2]/tbody/tr[4]/td/table/tbody/tr/td/table[3]/tbody/tr[1]/td/table/tbody/tr/td[3]/input[2]"
+former_button_xpath = "/html/body/table[2]/tbody/tr[4]/td/table/tbody/tr/td/table[3]/tbody/tr[1]/td/table/tbody/tr/td[3]/input[2]"
+former_res_list_xpath = "/html/body/table[2]/tbody/tr[4]/td/table/tbody/tr/td/table[3]/tbody/tr[2]/td/table/tbody"
 
 
 class InformationNotFoundError(Exception):
     pass
 
 
-# Functions
+# Helper Functions
 def login(username, password):
     try:
         username_input = driver.find_element(By.NAME, "username")
@@ -71,9 +73,12 @@ def new_tab():
 
 def switch_to_primary_tab():
     primary_tab = driver.window_handles[0]
-    current_tab = driver.current_window_handle
-    if current_tab != primary_tab:
-        driver.close()
+    try:
+        current_tab = driver.current_window_handle
+        if current_tab != primary_tab:
+            driver.close()
+    except NoSuchWindowException:
+        pass
     driver.switch_to.window(primary_tab)
 
 
@@ -102,17 +107,17 @@ def open_ledger(unit, resident):
             ledger_link = driver.find_element(By.XPATH, ledger_xpath)
             ledger_link.click()
         except NoSuchElementException:
-            find_former(unit, resident)
+            search_former(unit, resident)
     else:
-        pass
+        search_former(unit, resident)
 
 
-def find_former(unit, resident):
-    former_resident = driver.find_element(By.XPATH, former_res_xpath)
+def search_former(unit, resident):
+    former_resident = driver.find_element(By.XPATH, former_button_xpath)
     former_resident.click()
-    spacenum = driver.find_element(By.NAME, "spacenum")
+    spacenum = driver.find_element(By.NAME, "ressearch")
     spacenum.clear()
-    spacenum.send_keys(unit)
+    spacenum.send_keys(resident)
     spacenum.send_keys(Keys.ENTER)
     open_ledger(unit, resident)
 
@@ -124,6 +129,7 @@ driver.maximize_window()
 login(username, password)
 
 
+# Main Function
 def open_ticket():
     switch_to_primary_tab()
     try:
