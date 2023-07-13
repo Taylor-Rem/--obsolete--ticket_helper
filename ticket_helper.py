@@ -67,7 +67,37 @@ class TicketHelper:
             resident = resident_element.get_attribute("innerHTML").strip()
             return property, unit, resident
         except NoSuchElementException:
-            raise InformationNotFoundError("Information not found on page")
+            try:
+                property_element = self.driver.find_element(
+                    By.XPATH,
+                    self.ticket_property_xpath,
+                )
+                property = property_element.get_attribute("innerHTML")
+
+                resident_element = self.driver.find_element(
+                    By.XPATH, self.ticket_resident_xpath
+                )
+                resident = resident_element.get_attribute("innerHTML").strip()
+                return property, resident, resident
+            except NoSuchElementException:
+                try:
+                    property_element = self.driver.find_element(
+                        By.XPATH,
+                        self.ticket_property_xpath,
+                    )
+                    property = property_element.get_attribute("innerHTML")
+                    unit_element = self.driver.find_element(
+                        By.XPATH,
+                        self.ticket_unit_xpath,
+                    )
+                    unit = unit_element.get_attribute("innerHTML")
+                    return property, unit, unit
+                except NoSuchElementException:
+                    print("Not enough information on the page")
+                    pass
+            except Exception as e:
+                print("An error ocurred:", e)
+                pass
 
     def new_tab(self):
         self.driver.execute_script("window.open('about:blank', '_blank');")
@@ -138,8 +168,4 @@ class TicketHelper:
             print(str(e))
 
 
-if __name__ == "__main__":
-    helper = TicketHelper()
-    helper.driver.get(management_portal)
-    helper.driver.maximize_window()
-    helper.login(username, password)
+
